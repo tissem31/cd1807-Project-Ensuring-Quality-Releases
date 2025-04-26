@@ -1,7 +1,23 @@
 # Resource Group/Location
-variable "location" {}
-variable "application_type" {}
-variable "resource_type" {}
-variable "resource_group" {}
-variable "subnet_id" {}
-variable "address_prefix_test" {}
+variable "location" {
+    description = "The Azure Region where the Resource Group should exist."
+    type = string
+}
+variable "application_type" {
+    type = string
+}
+variable "resource_type" {
+    type = string
+}
+variable "resource_group" {
+    description = "the name of the resource group in which to create the subnet. This must be the resource group that the virtual network resides in"
+    type = string
+}
+variable "subnet_id" {
+    description = "The ID of the Subnet. Changing this forces a new resource to be created."
+    type = string
+}
+variable "address_prefix_test" {
+    description = "The address prefixes to use for the subnet."
+    type = string
+}
