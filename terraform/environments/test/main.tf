@@ -54,13 +54,13 @@ module "publicip" {
 }
 
 module "virtual_machine" {
-  source               = "../../modules/vm"
-  nic_name             = var.nic_name
-  location             = var.location
-  resource_group       = module.resource_group.resource_group_name
-  subnet_id            = module.network.subnet_id_test
-  public_ip_address_id = module.publicip.public_ip_address_id
-  vm_name              = var.vm_name
-  admin_username       = "azureuseradmin"
-  username             = "azureuseradmin"
-}
+#   source               = "../../modules/vm"
+#   nic_name             = var.nic_name
+#   location             = var.location
+#   resource_group       = module.resource_group.resource_group_name
+#   subnet_id            = module.network.subnet_id_test
+#   public_ip_address_id = module.publicip.public_ip_address_id
+#   vm_name              = var.vm_name
+#   admin_username       = "azureuseradmin"
+#   username             = "azureuseradmin"
+# }
