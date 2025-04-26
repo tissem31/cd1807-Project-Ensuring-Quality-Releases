@@ -53,7 +53,7 @@ module "publicip" {
   resource_group   = module.resource_group.resource_group_name
 }
 
-module "virtual_machine" {
+#module "virtual_machine" {
 #   source               = "../../modules/vm"
 #   nic_name             = var.nic_name
 #   location             = var.location
