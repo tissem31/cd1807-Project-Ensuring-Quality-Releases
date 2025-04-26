@@ -30,3 +30,10 @@ variable "address_space" {
   description = "The address space that is used the virtual network. You can supply more than one address space."
   type        = string
 }
+#vm variables
+variable "nic_name" {
+  type = string
+}
+variable "vm_name" {
+  type = string
+}
