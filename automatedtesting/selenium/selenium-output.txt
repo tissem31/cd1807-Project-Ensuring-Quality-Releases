@@ -1,0 +1,8 @@
+Navigating to https://www.saucedemo.com/
+Logged in successfully.
+Found 6 products. Adding all to cart.
+Adding: Sauce Labs Backpack
+Adding: Sauce Labs Bike Light
+...
+Removing all items from the cart.
+All items removed from cart.
