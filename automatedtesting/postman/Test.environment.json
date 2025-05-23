@@ -1,0 +1,14 @@
+{
+    "id": "environment-uuid",
+    "name": "Test Environment",
+    "values": [
+      {
+        "key": "baseUrl",
+        "value": "https://jsonplaceholder.typicode.com",
+        "enabled": true
+      }
+    ],
+    "timestamp": 0,
+    "schema": "https://schema.getpostman.com/json/environment/v2.1.0/environment.json"
+}
+  
