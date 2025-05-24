@@ -58,7 +58,7 @@ module "publicip" {
 #================================
 # log analytics workspace
 #================================
-data "azurerm_log_analytics_workspace" "law" {
+data "azurerm_log_analytics_workspace" "existing" {
   name                = "loganalytics-281296"
   resource_group_name = module.resource_group.resource_group_name
 }
@@ -110,21 +110,21 @@ resource "azurerm_monitor_action_group" "email_alert_group" {
 # Metric Alert on HTTP 5xx Errors
 # ================================
 resource "azurerm_monitor_metric_alert" "appservice_cpu_alert" {
-  name                = "appservice-high-cpu"
+  name                = "FakeRestAPI-Failure-Alert"
   resource_group_name = var.resource_group_name
   scopes              = [module.appservice.app_service_id]
-  description         = "Alert when CPU > 70% for App Service"
-  severity            = 2
-  enabled             = true
+  description         = "Alert on failed requests or high response time"
   frequency           = "PT1M"
   window_size         = "PT5M"
+  severity            = 2
+  enabled             = true
 
   criteria {
     metric_namespace = "Microsoft.Web/sites"
-    metric_name      = "CpuPercentage"
-    aggregation      = "Average"
+    metric_name      = "Http5xx"
+    aggregation      = "Total"
     operator         = "GreaterThan"
-    threshold        = 70
+    threshold        = 1
   }
 
   action {
