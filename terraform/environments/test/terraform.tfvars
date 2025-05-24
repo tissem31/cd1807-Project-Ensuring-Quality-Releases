@@ -16,3 +16,5 @@ address_prefix_test  = "10.5.1.0/24"
 
 vm_name  = "vm-udacity-lab"
 nic_name = "nic-udacity-lab"
+
+email_receiver = "ibtissemseghier3@gmail.com"

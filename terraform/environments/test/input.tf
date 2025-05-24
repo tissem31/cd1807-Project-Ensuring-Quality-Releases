@@ -38,3 +38,8 @@ variable "nic_name" {
 variable "vm_name" {
   type = string
 }
+
+variable "email_receiver" {
+  description = "Email address to receive Azure Monitor alerts"
+  type        = string
+}
