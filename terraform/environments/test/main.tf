@@ -7,10 +7,10 @@ provider "azurerm" {
 }
 terraform {
   backend "azurerm" {
-    storage_account_name = "tfstate1258227141"
+    storage_account_name = "tfstate179613623"
     container_name       = "tfstate"
     key                  = "projectEnsuringQualityReleases.tfstate"
-    access_key           = "tVCGyJBXlHaHnjhM7G1OQDXNpbyNoiHHiPVAeRZQ5vZFRSYNbHKNva3cl6bGyFBfH58vwhFh0VSz+AStvj0haQ=="
+    access_key           = "ZgtnyLkjVo0+7xGJjj4dNSY/jYVH2sLXQugmxrB4eEAgG+dFxG93VU5XUw3cbP5nG7tkK61CVHux+ASt2eL30A=="
   }
 }
 module "resource_group" {
@@ -53,14 +53,14 @@ module "publicip" {
   resource_group   = module.resource_group.resource_group_name
 }
 
-module "virtual_machine" {
-   source               = "../../modules/vm"
-   nic_name             = var.nic_name
-   location             = var.location
-   resource_group       = module.resource_group.resource_group_name
-   subnet_id            = module.network.subnet_id_test
-   public_ip_address_id = module.publicip.public_ip_address_id
-   vm_name              = var.vm_name
-   admin_username       = "azureuseradmin"
-  username             = "azureuseradmin"
-}
+# module "virtual_machine" {
+#   source               = "../../modules/vm"
+#   nic_name             = var.nic_name
+#   location             = var.location
+#   resource_group       = module.resource_group.resource_group_name
+#   subnet_id            = module.network.subnet_id_test
+#   public_ip_address_id = module.publicip.public_ip_address_id
+#   vm_name              = var.vm_name
+#   admin_username       = "azureuseradmin"
+#   username             = "azureuseradmin"
+# }
