@@ -58,7 +58,7 @@ module "publicip" {
 #================================
 # log analytics workspace
 #================================
-data "azurerm_log_analytics_workspace" "existing" {
+data "azurerm_log_analytics_workspace" "law" {
   name                = "loganalytics-281296"
   resource_group_name = module.resource_group.resource_group_name
 }
