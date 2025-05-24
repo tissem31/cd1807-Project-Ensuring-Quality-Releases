@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "TestSuite.Data-Validation",
+    "_postman_id": "data-validation-suite-id",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Author",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 0,\n  \"idBook\": 0,\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\"\n}"
+        },
+        "url": {
+          "raw": "https://fakerestapi.azurewebsites.net/api/v1/Authors",
+          "protocol": "https",
+          "host": ["fakerestapi", "azurewebsites", "net"],
+          "path": ["api", "v1", "Authors"]
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"Successful response\", function () {",
+            "    pm.response.to.have.status(200);",
+            "});",
+            "var json = pm.response.json();",
+            "pm.test(\"First name is correct\", function () {",
+            "    pm.expect(json.firstName).to.eql(pm.environment.get(\"firstName\"));",
+            "});",
+            "pm.test(\"Last name is correct\", function () {",
+            "    pm.expect(json.lastName).to.eql(pm.environment.get(\"lastName\"));",
+            "});",
+            "pm.environment.set(\"authorId\", json.id);"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Get All Authors",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://fakerestapi.azurewebsites.net/api/v1/Authors",
+          "protocol": "https",
+          "host": ["fakerestapi", "azurewebsites", "net"],
+          "path": ["api", "v1", "Authors"]
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"Response has authors\", function () {",
+            "    var json = pm.response.json();",
+            "    pm.expect(json.length).to.be.above(0);",
+            "});"
+          ]
+        }
+      }]
+    }
+  ]
+}
