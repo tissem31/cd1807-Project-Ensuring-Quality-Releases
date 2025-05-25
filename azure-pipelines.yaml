@@ -265,54 +265,35 @@ stages:
           steps:
           - download: current
             artifact: drop-uitests     # ToDo: Change/provide a name
-          
+            
           - task: Bash@3
             inputs:
               targetType: 'inline'
-              script: |
-    
+              script: |           
                 #! /bin/bash
-
+                
                 sudo apt-get upgrade -y
                 sudo apt-get install python3-pip -y
                 sudo apt-get install unzip -y
                 sudo apt-get install -y chromium-browser
-                sudo apt-get install -y python3-venv
-
-                # Créer un environnement virtuel Python
-                python3 -m venv venv
-                source venv/bin/activate
-                pip install --upgrade pip
-                pip install selenium
-
-                # Préparer le dossier d'application
+                pip3 install selenium
                 cd ~/
-                APP_DIR=/home/testuser/app
-                ZIP_FILE_NAME=$(Build.BuildId)-uitests.zip
-                UNZIP_DIR=$APP_DIR/uitests
-
-                mkdir -p "$APP_DIR"
-                mv /home/testuser/azagent/_work/1/drop-uitests/$ZIP_FILE_NAME "$APP_DIR"
-                cd "$APP_DIR"
-
-                # Extraire l'archive dans le dossier cible
-                unzip -o "$ZIP_FILE_NAME" -d uitests
-
-                # Télécharger chromedriver si nécessaire
-                FILE=$APP_DIR/chromedriver_linux64.zip
-                if [ ! -f "$FILE" ]; then
-                  LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-                  wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
-                  unzip -o chromedriver_linux64.zip
-                  sudo ln -sf $PWD/chromedriver /usr/local/bin/chromedriver
+                DIR=/home/testuser/app
+                if [ ! -d "$DIR" ]; then
+                    mkdir app
                 fi
-
-                export PATH=$PATH:$APP_DIR
-
+                mv /home/testuser/azagent/_work/1/drop-uitests/$(Build.BuildId)-uitests.zip app
+                cd app
+                unzip -o $(Build.BuildId)-uitests.zip -d uitests
+                FILE=/home/testuser/app/chromedriver_linux64.zip
+                if [ ! -f "$FILE" ]; then
+                    LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+                    wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
+                    unzip -o chromedriver_linux64.zip
+                    sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver
+                fi
+                export PATH=$PATH:/home/testuser/app
                 echo "Starting Selenium Tests"
-
-                # Trouver et exécuter le test Python
-                cd $(find uitests -type d -name "*uitests" | head -n 1)
-                python3 add_remove_from_cart.py >> "$APP_DIR/selenium.log" 2>&1
-
-                echo "Completed Selenium Tests. Check $APP_DIR/selenium.log for results."
+                cd uitests/44-uitests || cd uitests
+                python3 add_remove_from_cart.py >> selenium.log
+                echo "Completed Selenium Tests. Check selenium.log for results."
