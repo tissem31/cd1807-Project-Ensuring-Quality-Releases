@@ -180,13 +180,8 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip
       displayName: 'Upload Package'
       artifact: drop-perftests
-      
+
 #--------------------------------------------#  
-# DEPLOYMENT STAGE
-#--------------------------------------------#    
-- stage: Deploy
-  jobs:
-  #--------------------------------------------#  
   # Deploy FakeRestAPI Web App
   # ToDo: Provide <environment name> you created in your DevOps project
   - deployment: FakeRestAPI
@@ -204,3 +199,19 @@ stages:
               appName: 'myApplicationfinal07-AppService'               # ToDo
               appType: webApp
               package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'      # ToDo: Use the published zip artifact. 
+
+          # Réinitialiser WEBSITE_RUN_FROM_PACKAGE à 0
+          - task: AzureAppServiceSettings@1
+            displayName: 'Reset WEBSITE_RUN_FROM_PACKAGE = 0'
+            inputs:
+              azureSubscription: $(azureServiceConnectionId)
+              appName: 'myApplicationfinal07-AppService'
+              resourceGroupName: 'Azuredevops' 
+              appSettings: |
+                [
+                  {
+                    "name": "WEBSITE_RUN_FROM_PACKAGE",
+                    "value": "0",
+                    "slotSetting": false
+                  }
+                ]
