@@ -180,3 +180,27 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip
       displayName: 'Upload Package'
       artifact: drop-perftests
+      
+#--------------------------------------------#  
+# DEPLOYMENT STAGE
+#--------------------------------------------#    
+- stage: Deploy
+  jobs:
+  #--------------------------------------------#  
+  # Deploy FakeRestAPI Web App
+  # ToDo: Provide <environment name> you created in your DevOps project
+  - deployment: FakeRestAPI
+    pool: 
+      name: myAgentPool     
+    environment: 'test-vm'   # ToDo
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App'
+            inputs:
+              azureSubscription: $(azureServiceConnectionId)     # ToDo
+              appName: 'myApplicationfinal07-AppService'               # ToDo
+              appType: webApp
+              package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'      # ToDo: Use the published zip artifact. 
