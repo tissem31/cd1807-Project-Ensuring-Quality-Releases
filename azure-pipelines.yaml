@@ -220,34 +220,34 @@ stages:
                     "slotSetting": false
                   }
                 ]
-          #--------------------------------------------#    
-          # Run JMeter test suite against the App Service
-          - task: CmdLine@2
-            displayName: 'Install Java and run JMeter Tests'
-            inputs:
-              script: |
+          # #--------------------------------------------#    
+          # # Run JMeter test suite against the App Service
+          # - task: CmdLine@2
+          #   displayName: 'Install Java and run JMeter Tests'
+          #   inputs:
+          #     script: |
 
-                # Install Java
-                sudo apt-get update
-                sudo apt-get install -y openjdk-11-jdk
+          #       # Install Java
+          #       sudo apt-get update
+          #       sudo apt-get install -y openjdk-11-jdk
 
-                # Set JAVA_HOME
-                export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-                export PATH=$JAVA_HOME/bin:$PATH
+          #       # Set JAVA_HOME
+          #       export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          #       export PATH=$JAVA_HOME/bin:$PATH
 
-                java -version
+          #       java -version
 
-                # Download and unzip JMeter
-                wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.1.tgz
-                tar -xf apache-jmeter-5.2.1.tgz
+          #       # Download and unzip JMeter
+          #       wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.1.tgz
+          #       tar -xf apache-jmeter-5.2.1.tgz
 
-                # Unzip test suite
-                unzip -o $(Build.BuildId)-perftests.zip
+          #       # Unzip test suite
+          #       unzip -o $(Build.BuildId)-perftests.zip
 
-                # Run JMeter test
-                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
-                cat jmeter.log                                        # ToDo: Write your commands
-              workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
+          #       # Run JMeter test
+          #       ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
+          #       cat jmeter.log                                        # ToDo: Write your commands
+          #     workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
 
   #--------------------------------------------#  
   # Selenium | Functional UI Tests
@@ -257,7 +257,7 @@ stages:
     environment:
       name: 'test-vm'        # ToDo: Change/provide a name
       resourceType: VirtualMachine
-      tags: selenium
+      tags: test
     strategy:
       runOnce:
         deploy:
