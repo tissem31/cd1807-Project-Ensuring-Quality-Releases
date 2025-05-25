@@ -242,7 +242,7 @@ stages:
                 tar -xf apache-jmeter-5.2.1.tgz
 
                 # Unzip test suite
-                unzip -o $(Build.BuildId)-perftests.zip
+                unzip -o $(Build.BuildId)-perftests.zip -d $(Build.BuildId)-perftests
 
                 # Run JMeter test
                 ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
