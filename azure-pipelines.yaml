@@ -172,7 +172,7 @@ stages:
     - task: ArchiveFiles@2
       displayName: 'Archive PerformanceTestSuite'
       inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/automatedtesting/jmeter'
+        rootFolderOrFile: #'$(Build.SourcesDirectory)/automatedtesting/jmeter'
         includeRootFolder: false
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip'
@@ -245,7 +245,8 @@ stages:
                 unzip -o $(Build.BuildId)-perftests.zip -d $(Build.BuildId)-perftests
 
                 # Run JMeter test
-                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
+                ##./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
+                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
                 cat jmeter.log                                        # ToDo: Write your commands
               workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
 
@@ -283,7 +284,7 @@ stages:
                 fi
                 mv /home/testuser/azagent/_work/1/drop-uitests/$(Build.BuildId)-uitests.zip app
                 cd app
-                unzip -o $(Build.BuildId)-uitests.zip
+                unzip -o $(Build.BuildId)-uitests.zip -d $(Build.BuildId)-uitests.zip
                 FILE=/home/testuser/app/chromedriver_linux64.zip
                 if [ ! -f "$FILE" ]; then
                     LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
