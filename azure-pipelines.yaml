@@ -14,7 +14,7 @@ pool:
 variables:
   python.version: '3.7.6'
   # ToDo: Replace the service connection name as used in the DevOps project settings
-  azureServiceConnectionId: 'dd6f318c-1d00-4c52-b175-6b87ae6fe9bc'
+  azureServiceConnectionId: '11cfabee-7261-49b1-aea6-7c7295789d64'
   # Project root folder. Point to the folder containing manage.py file.
   projectRoot: $(System.DefaultWorkingDirectory)
   # Environment name
@@ -46,7 +46,7 @@ stages:
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
         backendServiceArm: '$(azureServiceConnectionId)'
         backendAzureRmResourceGroupName: 'Azuredevops'
-        backendAzureRmStorageAccountName: 'tfstate20128356'
+        backendAzureRmStorageAccountName: 'tfstate5034440'
         backendAzureRmContainerName: 'tfstate'
         backendAzureRmKey: 'projectEnsuringQualityReleases.tfstate'
 
@@ -246,7 +246,7 @@ stages:
 
                 # Run JMeter test
                 ##./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
-                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
+                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
                 cat jmeter.log                                        # ToDo: Write your commands
               workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
 
@@ -284,7 +284,7 @@ stages:
                 fi
                 mv /home/testuser/azagent/_work/1/drop-uitests/$(Build.BuildId)-uitests.zip app
                 cd app
-                unzip -o $(Build.BuildId)-uitests.zip
+                unzip -o $(Build.BuildId)-uitests.zip -d $(Build.BuildId)-uitests
                 FILE=/home/testuser/app/chromedriver_linux64.zip
                 if [ ! -f "$FILE" ]; then
                     LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
@@ -294,6 +294,5 @@ stages:
                 fi
                 export PATH=$PATH:/home/testuser/app
                 echo "Starting Selenium Tests"
-                cd $(Pipeline.Workspace)/drop-uitests/
                 python3 add_remove_from_cart.py >> selenium.log
                 echo "Completed Selenium Tests. Check selenium.log for results."
