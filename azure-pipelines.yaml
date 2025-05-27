@@ -212,97 +212,53 @@ stages:
                 targetType: 'inline'
                 script: |   
 
-                  #! /bin/bash
+                  set -e
 
-                  set-e              
-                  # Mise à jour des dépôts et installation des dépendances
+                  echo "== 🛠️ Installing dependencies =="
                   sudo apt-get update -y
-                  sudo apt-get upgrade -y
-              
-                  # Installation de Python et pip, unzio, curl
-                  sudo apt-get install -y python3 python3-pip python3-venv unzip curl wget jq
+                  sudo apt-get install -y python3-pip unzip chromium-browser curl jq
 
-                  # Installation d'unzip
-                  sudo apt-get install unzip -y
-              
-                  # Installation de Chrome (plus stable que Chromium)
-                  wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-                  echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-                  sudo apt-get update -y
-                  sudo apt-get install google-chrome-stable -y
-              
-                  # Vérifier l'installation de pip
-                  python3 -m pip --version || {
-                    echo "Installing pip manually..."
-                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                    python3 get-pip.py --user
-                    export PATH=$PATH:/home/azureuser/.local/bin
-                  }
-              
-                  # Installation de selenium
+                  echo "== 🐍 Installing Selenium =="
                   python3 -m pip install selenium
 
-                  # Vérification que l'import fonctionne
+                  echo "== ✅ Verifying Selenium installation =="
                   python3 -c "import selenium; print('✅ Selenium successfully installed:', selenium.__version__)"
-
-                  # Voir les chemins où Python cherche les modules
                   python3 -m site
-              
+
+                  echo "== 📁 Preparing workspace =="
                   cd ~/
-                  DIR=/home/azureuser/app
-                  if [ ! -d "$DIR" ]; then
-                    mkdir app
-                  fi
-              
-                  # Debug: Vérifier la source des artifacts
-                  echo "=== DEBUG: Checking artifact source ==="
-                  ls -la /home/azureuser/azagent/_work/1/
-                  echo "=== DEBUG: Checking drop-uitests ==="
-                  ls -la /home/azureuser/azagent/_work/1/drop-uitests/ 2>/dev/null || echo "drop-uitests directory not found"
-              
-                  # Rechercher tous les fichiers zip dans l'arborescence
-                  echo "=== DEBUG: Looking for zip files ==="
-                  find /home/azureuser/azagent/_work/1/ -name "*.zip" -type f 2>/dev/null
-              
-                  cd app
-              
-                  # Vérifier que l'artifact existe
-                  if [ ! -d "/home/azureuser/azagent/_work/1/drop-uitests/" ]; then
-                    echo "ERROR: drop-uitests artifact not found!"
+                  APP_DIR="/home/azureuser/app"
+                  mkdir -p "$APP_DIR"
+                  cd "$APP_DIR"
+
+                  echo "== 🔍 Checking artifacts =="
+                  ARTIFACTS_DIR="/home/azureuser/azagent/_work/1/drop-uitests"
+                  if [ ! -d "$ARTIFACTS_DIR" ]; then
+                    echo "❌ ERROR: Artifact directory '$ARTIFACTS_DIR' not found!"
                     exit 1
                   fi
-              
-                  # Chercher l'archive de tests
-                  ZIP_FILE=$(find /home/azureuser/azagent/_work/1/drop-uitests/ -name "*.zip" | head -1)
+
+                  ZIP_FILE=$(find "$ARTIFACTS_DIR" -name "*.zip" | head -1)
                   if [ -z "$ZIP_FILE" ]; then
-                    echo "ERROR: No zip file found in drop-uitests!"
-                    echo "Contents of drop-uitests:"
-                    ls -la /home/azureuser/azagent/_work/1/drop-uitests/
+                    echo "❌ ERROR: No zip file found in $ARTIFACTS_DIR"
+                    ls -la "$ARTIFACTS_DIR"
                     exit 1
                   fi
-              
-                  echo "Found test archive: $ZIP_FILE"
+
+                  echo "📦 Found test archive: $ZIP_FILE"
                   cp "$ZIP_FILE" tests.zip
-              
-                  # Debug: Vérifier le contenu avant dézippage
-                  echo "=== DEBUG: Files in app directory before unzip ==="
-                  ls -la
-              
-                  # Dézipper l'archive
-                  echo "Unzipping tests.zip..."
+
+                  echo "== 📂 Unzipping test archive =="
                   unzip -o tests.zip
-                  echo "=== DEBUG: Files after unzip ==="
-                  ls -la
                   find . -name "*.py" -type f
-              
-                  # Obtenir la version complète de Chrome installée
-                  CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }')
+
+                  echo "== 🌐 Checking Chrome & downloading matching ChromeDriver =="
+                  CHROME_VERSION=$(chromium-browser --version | awk '{ print $2 }')
                   CHROMEDRIVER_MAJOR=$(echo "$CHROME_VERSION" | cut -d '.' -f1)
 
                   echo "Chrome version: $CHROME_VERSION"
                   echo "Detected Chrome major version: $CHROMEDRIVER_MAJOR"
-              
-                  # Télécharger la version correspondante de ChromeDriver
+
                   LATEST_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROMEDRIVER_MAJOR}"
                   CHROMEDRIVER_VERSION=$(curl -s "$LATEST_URL")
 
@@ -311,53 +267,45 @@ stages:
                     exit 1
                   fi
 
-                  echo "Downloading ChromeDriver version: $CHROMEDRIVER_VERSION"
-                  wget "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+                  echo "📥 Downloading ChromeDriver $CHROMEDRIVER_VERSION"
+                  wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
                   unzip -o chromedriver_linux64.zip
                   chmod +x chromedriver
                   sudo mv chromedriver /usr/local/bin/
-
-                  export PATH=$PATH:/home/azureuser/.local/bin
-
-                  echo "✅ ChromeDriver $CHROMEDRIVER_VERSION installed successfully"
                   
-                  echo "Starting Selenium Tests"
-              
-                  # Rechercher le fichier de test
+                  echo "✅ ChromeDriver installed successfully"
+                  
+                  echo "== 🧪 Running Selenium test =="
                   TEST_FILE=$(find . -name "add_remove_from_cart.py" -type f | head -1)
+
                   if [ -n "$TEST_FILE" ]; then
-                    echo "Found test file at: $TEST_FILE"
-                    cd $(dirname "$TEST_FILE")
-                    echo "Current directory: $(pwd)"
-                    echo "Files in test directory:"
-                    ls -la
+                    echo "📄 Found test file: $TEST_FILE"
+                    TEST_DIR=$(dirname "$TEST_FILE")
+                    cd "$TEST_DIR"
+
+                    LOG_FILE="/home/azureuser/app/selenium.log"
+                    touch "$LOG_FILE"
+                    chmod 666 "$LOG_FILE"
+
+                    echo "=== EXECUTING SELENIUM TEST ===" | tee "$LOG_FILE"
+                    python3 add_remove_from_cart.py 2>&1 | tee -a "$LOG_FILE"
+                    echo "=== TEST EXECUTION COMPLETED ===" | tee -a "$LOG_FILE"
                   
-                    # Créer le fichier de log avec les bonnes permissions
-                    touch /home/azureuser/app/selenium.log
-                    chmod 666 /home/azureuser/app/selenium.log
-                  
-                    # Exécuter le test
-                    echo "=== EXECUTING SELENIUM TEST ===" | tee /home/azureuser/app/selenium.log
-                    python3 add_remove_from_cart.py 2>&1 | tee -a /home/azureuser/app/selenium.log
-                    echo "=== TEST EXECUTION COMPLETED ===" | tee -a /home/azureuser/app/selenium.log
                   else
-                    echo "Error: add_remove_from_cart.py not found anywhere"
+                  
+                    echo "❌ ERROR: Test file 'add_remove_from_cart.py' not found!"
                     echo "All Python files found:"
-                    find /home/azureuser/app -name "*.py" -type f
+                    find "$APP_DIR" -name "*.py" -type f
                     exit 1
                   fi
-              
-                  echo "Completed Selenium Tests. Check selenium.log for results."
-              
-                  # Afficher le contenu du log dans la console
-                  echo "=== SELENIUM TEST RESULTS ==="
-                  cat /home/azureuser/app/selenium.log || echo "No log file found"
-                  echo "=== END OF RESULTS ==="
-              
-                  # Copier le log vers un répertoire accessible pour la publication
+
+                  echo "== 📄 Displaying test log =="
+                  cat "$LOG_FILE" || echo "No log file found"
+
+                  echo "== 📤 Copying log to TestResults for publication =="
                   mkdir -p /home/azureuser/TestResults
-                  cp /home/azureuser/app/selenium.log /home/azureuser/TestResults/ 2>/dev/null || echo "No log file to copy"
-              
+                  cp "$LOG_FILE" /home/azureuser/TestResults/ 2>/dev/null || echo "⚠️ No log file to copy"  
+                  
             # Publier les résultats des tests comme artifact
             - task: PublishBuildArtifacts@1
               inputs:
