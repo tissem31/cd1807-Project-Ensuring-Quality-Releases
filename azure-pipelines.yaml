@@ -187,8 +187,7 @@ stages:
                     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.1.tgz
                     tar -xf apache-jmeter-5.2.1.tgz
                     unzip -o $(Build.BuildId)-perftests.zip -d $(Build.BuildId)-perftests
-                    cd $(Build.BuildId)-perftests
-                    ./apache-jmeter-5.2.1/bin/jmeter -n -t automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
+                    ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/automatedtesting/jmeter/test-suite/StressTestSuite.jmx -j jmeter.log -f
                     cat jmeter.log
                   workingDirectory: $(Pipeline.Workspace)/drop-perftests
 
@@ -214,14 +213,15 @@ stages:
                 script: |   
 
                   #! /bin/bash
-              
+
+                  set-e              
                   # Mise à jour des dépôts et installation des dépendances
                   sudo apt-get update -y
                   sudo apt-get upgrade -y
               
-                  # Installation de Python et pip
-                  sudo apt-get install python3 python3-pip python3-venv -y
-              
+                  # Installation de Python et pip, unzio, curl
+                  sudo apt-get install -y python3 python3-pip python3-venv unzip curl wget jq
+
                   # Installation d'unzip
                   sudo apt-get install unzip -y
               
