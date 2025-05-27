@@ -218,12 +218,18 @@ stages:
                   sudo apt-get update -y
                   sudo apt-get install -y python3-pip unzip chromium-browser curl jq
 
-                  echo "== 🐍 Installing Selenium =="
-                  python3 -m pip install selenium
+                  echo "== 🧪 Creating Python virtual environment =="
+                  python3 -m venv venv
+                  source venv/bin/activate
 
+                  echo "== 🐍 Installing Selenium in virtual environment =="
+                  pip install --upgrade pip
+                  pip install selenium
+
+                  # Optional: Confirm installation
                   echo "== ✅ Verifying Selenium installation =="
-                  python3 -c "import selenium; print('✅ Selenium successfully installed:', selenium.__version__)"
-                  python3 -m site
+                  python -c "import selenium; print('✅ Selenium installed in venv:', selenium.__version__)"
+                   python3 -m site                 
 
                   echo "== 📁 Preparing workspace =="
                   cd ~/
@@ -288,7 +294,7 @@ stages:
                     chmod 666 "$LOG_FILE"
 
                     echo "=== EXECUTING SELENIUM TEST ===" | tee "$LOG_FILE"
-                    python3 add_remove_from_cart.py 2>&1 | tee -a "$LOG_FILE"
+                    venv/bin/python add_remove_from_cart.py 2>&1 | tee -a "$LOG_FILE"
                     echo "=== TEST EXECUTION COMPLETED ===" | tee -a "$LOG_FILE"
                   
                   else
@@ -305,7 +311,7 @@ stages:
                   echo "== 📤 Copying log to TestResults for publication =="
                   mkdir -p /home/azureuser/TestResults
                   cp "$LOG_FILE" /home/azureuser/TestResults/ 2>/dev/null || echo "⚠️ No log file to copy"  
-                  
+
             # Publier les résultats des tests comme artifact
             - task: PublishBuildArtifacts@1
               inputs:
