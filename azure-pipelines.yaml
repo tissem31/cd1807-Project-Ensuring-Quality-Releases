@@ -268,18 +268,23 @@ stages:
                   LATEST_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROMEDRIVER_MAJOR}"
                   CHROMEDRIVER_VERSION=$(curl -s "$LATEST_URL")
 
-                  if [ -z "$CHROMEDRIVER_VERSION" ]; then
-                    echo "❌ Unable to find matching ChromeDriver version for Chrome $CHROME_VERSION"
-                    exit 1
+                  # Test si la version est valide (pas un XML d’erreur)
+                  if [[ "$CHROMEDRIVER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "Version ChromeDriver correspondante trouvée : $CHROMEDRIVER_VERSION"
+                  else
+                    echo "⚠️ Version ChromeDriver pour Chrome $CHROMEDRIVER_MAJOR introuvable, récupération de la version stable la plus récente"
+                    LATEST_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE"
+                    CHROMEDRIVER_VERSION=$(curl -s "$LATEST_URL")
+                    echo "Utilisation de la version ChromeDriver : $CHROMEDRIVER_VERSION"
                   fi
 
-                  echo "📥 Downloading ChromeDriver $CHROMEDRIVER_VERSION"
+                  echo "📥 Téléchargement de ChromeDriver $CHROMEDRIVER_VERSION"
                   wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
                   unzip -o chromedriver_linux64.zip
                   chmod +x chromedriver
                   sudo mv chromedriver /usr/local/bin/
-                  
-                  echo "✅ ChromeDriver installed successfully"
+
+                  echo "✅ ChromeDriver installé avec succès"
                   
                   echo "== 🧪 Running Selenium test =="
                   TEST_FILE=$(find . -name "add_remove_from_cart.py" -type f | head -1)
