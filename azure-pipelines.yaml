@@ -240,6 +240,12 @@ stages:
               
                   # Installation de selenium
                   python3 -m pip install selenium
+
+                  # Vérification que l'import fonctionne
+                  python3 -c "import selenium; print('✅ Selenium successfully installed:', selenium.__version__)"
+
+                  # Voir les chemins où Python cherche les modules
+                  python3 -m site
               
                   cd ~/
                   DIR=/home/azureuser/app
