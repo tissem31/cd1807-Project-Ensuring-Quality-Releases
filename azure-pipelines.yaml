@@ -50,7 +50,7 @@ stages:
         backendAzureRmContainerName: 'tfstate'
         backendAzureRmKey: 'projectEnsuringQualityReleases.tfstate'
 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+    - task: TerraformTaskV4@4
       displayName: Terraform validate
       inputs:
         provider: 'azurerm'
@@ -250,9 +250,10 @@ stages:
                 cat jmeter.log                                        # ToDo: Write your commands
               workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
 
-  #--------------------------------------------#  
-  # Selenium | Functional UI Tests
-  # ToDo: 
+  
+#--------------------------------------------#  
+# Selenium | Functional UI Tests
+# ToDo: 
   - deployment: VMDeploy
     displayName: Selenium Tests
     environment:
@@ -262,16 +263,16 @@ stages:
     strategy:
       runOnce:
         deploy:
-          steps:
+         steps:
           - download: current
             artifact: drop-uitests     # ToDo: Change/provide a name
-            
+          
           - task: Bash@3
             inputs:
               targetType: 'inline'
-              script: |           
+              script: |    
+
                 #! /bin/bash
-                
                 sudo apt-get upgrade -y
                 sudo apt-get install python3-pip -y
                 sudo apt-get install unzip -y
@@ -280,19 +281,37 @@ stages:
                 cd ~/
                 DIR=/home/testuser/app
                 if [ ! -d "$DIR" ]; then
-                    mkdir app
+                  mkdir app
                 fi
                 mv /home/testuser/azagent/_work/1/drop-uitests/$(Build.BuildId)-uitests.zip app
                 cd app
                 unzip -o $(Build.BuildId)-uitests.zip -d $(Build.BuildId)-uitests
+              
+                # Téléchargement et installation de ChromeDriver
                 FILE=/home/testuser/app/chromedriver_linux64.zip
                 if [ ! -f "$FILE" ]; then
-                    LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-                    wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
-                    unzip -o chromedriver_linux64.zip
-                    sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver
+                  LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+                  wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
+                  unzip -o chromedriver_linux64.zip
+                  sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver
                 fi
                 export PATH=$PATH:/home/testuser/app
+              
+                # Navigation vers le répertoire contenant les tests
+                cd $(Build.BuildId)-uitests/uitest
+              
                 echo "Starting Selenium Tests"
-                python3 add_remove_from_cart.py >> selenium.log
+                echo "Current directory: $(pwd)"
+                echo "Files in directory:"
+                ls -la
+              
+                # Exécution des tests Python
+                if [ -f "add_remove_from_cart.py" ]; then
+                  python3 add_remove_from_cart.py >> ../../selenium.log
+                else
+                  echo "Error: add_remove_from_cart.py not found in $(pwd)" >> ../../selenium.log
+                  echo "Available files:" >> ../../selenium.log
+                  ls -la >> ../../selenium.log
+                fi
+              
                 echo "Completed Selenium Tests. Check selenium.log for results."
