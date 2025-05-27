@@ -1,8 +1,8 @@
 terraform {
   backend "azurerm" {
-    storage_account_name = "tfstate5034440"
+    storage_account_name = "tfstate469626245"
     container_name       = "tfstate"
     key                  = "projectEnsuringQualityReleases.tfstate"
-    access_key           = "cCy3ixBNuDq9HRTQGzTZ1gTka2hqWAAlhC+VIA4AwE37fap2k0iKm+izpSuFuu76VkvgvJ3t3ze++AStmFMdHA=="
+    access_key           = "c49wchTTCsDJCupktm9dN5XnBpVVxl8yhM41mTWzN1uL+l+UmPPWws1AOAvxeIWLB3xUfqzH/bQK+ASt/GbR1A=="
   }
 }
