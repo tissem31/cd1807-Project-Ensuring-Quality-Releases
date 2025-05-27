@@ -239,7 +239,7 @@ stages:
                   }
               
                   # Installation de selenium
-                  python3 -m pip install selenium --user
+                  python3 -m pip install selenium
               
                   cd ~/
                   DIR=/home/azureuser/app
