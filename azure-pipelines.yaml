@@ -1,353 +1,349 @@
 name: Azure Pipelines
 
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
 trigger:
-- master
+  - master
 
-# ToDo: Replace the agent pool name, if you are using Udacity Cloud lab. 
-# Otherwise, comment out the line below. 
-pool: 
+pool:
   name: myAgentPool
 
 variables:
   python.version: '3.7.6'
-  # ToDo: Replace the service connection name as used in the DevOps project settings
   azureServiceConnectionId: 'e1079189-5de6-427c-8758-cba55c275db4'
-  # Project root folder. Point to the folder containing manage.py file.
   projectRoot: $(System.DefaultWorkingDirectory)
-  # Environment name
   environmentName: 'test-vm'
 
 stages:
-#--------------------------------------------#  
+
+# ============================
 # BUILD STAGE
-#--------------------------------------------#    
+# ============================
 - stage: Build
   jobs:
-  - job: BuildInfrastructure
-    steps:
-    #--------------------------------------------#  
-    # Use Terraform to create the Infrastructure      
-    # Install Terraform on the pipeline agent 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Terrafom installation'
-      inputs:
-        terraformVersion: '1.2.9'
-    
-    # Run Terraform Init on the pipeline agent 
-    # ToDo: Replace the resource group name, storage account name, and container name below
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terrafom init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        backendServiceArm: '$(azureServiceConnectionId)'
-        backendAzureRmResourceGroupName: 'Azuredevops'
-        backendAzureRmStorageAccountName: 'tfstate469626245'
-        backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'projectEnsuringQualityReleases.tfstate'
+    - job: BuildInfrastructure
+      steps:
 
-    - task: TerraformTaskV4@4
-      displayName: Terraform validate
-      inputs:
-        provider: 'azurerm'
-        command: 'validate'
+        # Terraform installation
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+          displayName: 'Terraform installation'
+          inputs:
+            terraformVersion: '1.2.9'
 
-    # OPTIONAL - This step is needed only if your Terraform VM uses an SSH key pair for login and you want your pipeline agent to connect to it. 
-    # Generate an SSH key pair in your local/AZ Cloud shell. Use the public key in the Terraform VM module. 
-    # Install public key and private key file to the pipeline agent, using the task below. 
-    # ToDo: Change the inputs value below
-    # - task: InstallSSHKey@0
-    #   inputs:
-    #     knownHostsEntry: 'KNOWN_HOSTS_STRING' # variable value
-    #     sshPublicKey: 'PUBLIC_KEY'            # variable value
-    #     sshKeySecureFile: 'id_rsa' # Use secure file feature in the pipeline library UI to save the "id_rsa" file, as mentioned here: https://learn.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops#add-a-secure-file
-    
-    # - task: DownloadSecureFile@1
-    #  name: udacity_public_key
-    #  displayName: 
-    #  inputs:
-    #   secureFile: 
+        # Terraform init
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          displayName: 'Terraform init'
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+            backendServiceArm: '$(azureServiceConnectionId)'
+            backendAzureRmResourceGroupName: 'Azuredevops'
+            backendAzureRmStorageAccountName: 'tfstate469626245'
+            backendAzureRmContainerName: 'tfstate'
+            backendAzureRmKey: 'projectEnsuringQualityReleases.tfstate'
 
-    
-    # Run Terraform Apply
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: Terraform apply
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+        - task: TerraformTaskV4@4
+          displayName: Terraform validate
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
 
-    #ToDo: Change the workingDirectory path, as applicable to you
-    #Destroy the resources in Azure by running a separate pipeline. 
-    # - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-    #   displayName: Terraform destroy
-    #   inputs:
-    #     provider: 'azurerm'
-    #     command: 'destroy'
-    #     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-    #     environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+        # Terraform apply
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          displayName: Terraform apply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+            environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
 
-#--------------------------------------------#    
-    # Install Node.js
-    - task: UseNode@1
-      displayName: 'Install Node.js'
-      inputs:
-        version: '16.x'  # or '18.x' if needed
-    # Postman - Install Newman    
-    # ToDo: Update the command and verify the working directory
-    - task: CmdLine@2
-      displayName: Install Newman
-      inputs:
-        script: 'npm install -g newman'
-        workingDirectory: $(System.DefaultWorkingDirectory)
-    - task: CmdLine@2
-      displayName: 'List files in working directory'
-      inputs:
-        script: 'ls -la'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-    # Postman Data Validation Test Suite    
-    # ToDo: Verify the working directory
-    - task: CmdLine@2
-      displayName: Run Data Validation Tests
-      continueOnError: true
-      inputs:
-        script: 'newman run TestSuite.Data-Validation.json -e Test.environment.json --reporters cli,junit --reporter-junit-export TEST-DataValidation.xml'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-    # Postman Regression Test Suite    
-    # ToDo: Verify the working directory
-    - task: CmdLine@2
-      displayName: Run Regression Tests
-      continueOnError: true
-      inputs:
-        script: 'newman run TestSuite.Regression.json -e Test.environment.json --reporters cli,junit --reporter-junit-export TEST-Regression.xml'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-    # Postman - Publish Results 
-    # ToDo: Complete the task as explained here: https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/test/publish-test-results?view=azure-devops&tabs=trx%2Cyaml#yaml-snippet
-    - task: PublishTestResults@2
-      displayName: Publish Postman Test Results
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '**/TEST-*.xml'
-        searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-        mergeTestResults: true
-        testRunTitle: 'Postman API Test Results'
+        # Node.js and Newman installation
+        - task: UseNode@1
+          displayName: 'Install Node.js'
+          inputs:
+            version: '16.x'
 
-#--------------------------------------------#
-    # Selenium (UI) Test Suite - Archive the package  
-    # "ArchiveFiles@2" picks up the web package and archives it.
-    - task: ArchiveFiles@2
-      displayName: 'Archive UI Tests'
-      inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip'
-    # Selenium Test Suite - Publish the package  
-    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip   # Same as the archiveFile artifact above. 
-      displayName: 'Upload Package'
-      artifact: drop-uitests
+        - task: CmdLine@2
+          displayName: Install Newman
+          inputs:
+            script: 'npm install -g newman'
+            workingDirectory: $(System.DefaultWorkingDirectory)
 
-    #--------------------------------------------#    
-    # FakeRestAPI - Archive
-    # ToDo: Complete the ArchiveFiles@2 task and publish step 
-    - task: ArchiveFiles@2
-      displayName: 'Archive FakeRestAPI'
-      inputs:
-        rootFolderOrFile: 
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
-    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
-      displayName: 'Upload Package'
-      artifact: drop-fakerestapi
+        # Postman tests
+        - task: CmdLine@2
+          displayName: 'List files in working directory'
+          inputs:
+            script: 'ls -la'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
 
-    #--------------------------------------------#  
-    # JMeter (Performance) Test Suite - Archive
-    # ToDo: Complete the ArchiveFiles@2 task and publish step 
-    - task: ArchiveFiles@2
-      displayName: 'Archive PerformanceTestSuite'
-      inputs:
-        rootFolderOrFile: #'$(Build.SourcesDirectory)/automatedtesting/jmeter'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip'
-    # JMeter Test Suite - Publish    
-    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip
-      displayName: 'Upload Package'
-      artifact: drop-perftests
+        - task: CmdLine@2
+          displayName: Run Data Validation Tests
+          continueOnError: true
+          inputs:
+            script: 'newman run TestSuite.Data-Validation.json -e Test.environment.json --reporters cli,junit --reporter-junit-export TEST-DataValidation.xml'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
 
-#--------------------------------------------#  
+        - task: CmdLine@2
+          displayName: Run Regression Tests
+          continueOnError: true
+          inputs:
+            script: 'newman run TestSuite.Regression.json -e Test.environment.json --reporters cli,junit --reporter-junit-export TEST-Regression.xml'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+
+        - task: PublishTestResults@2
+          displayName: Publish Postman Test Results
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: '**/TEST-*.xml'
+            searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+            mergeTestResults: true
+            testRunTitle: 'Postman API Test Results'
+
+        # Archive UI tests
+        - task: ArchiveFiles@2
+          displayName: 'Archive UI Tests'
+          inputs:
+            rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip'
+
+        - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip
+          displayName: 'Upload Package'
+          artifact: drop-uitests
+
+        # Archive FakeRestAPI
+        - task: ArchiveFiles@2
+          displayName: 'Archive FakeRestAPI'
+          inputs:
+            rootFolderOrFile: ''
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+
+        - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+          displayName: 'Upload Package'
+          artifact: drop-fakerestapi
+
+        # Archive JMeter test suite
+        - task: ArchiveFiles@2
+          displayName: 'Archive PerformanceTestSuite'
+          inputs:
+            rootFolderOrFile: ''
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip'
+
+        - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip
+          displayName: 'Upload Package'
+          artifact: drop-perftests
+
+# ============================
 # DEPLOYMENT STAGE
-#--------------------------------------------#    
+# ============================
 - stage: Deploy
   jobs:
-  #--------------------------------------------#  
-  # Deploy FakeRestAPI Web App
-  # ToDo: Provide <environment name> you created in your DevOps project
-  - deployment: FakeRestAPI
-    pool: 
-      name: myAgentPool     
-    environment: 'test-vm'   # ToDo
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App'
-            inputs:
-              azureSubscription: $(azureServiceConnectionId)     # ToDo
-              appName: 'myApplicationfinal07-AppService'               # ToDo
-              appType: webApp
-              package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'      # ToDo: Use the published zip artifact. 
 
-          # Réinitialiser WEBSITE_RUN_FROM_PACKAGE à 0
-          - task: AzureAppServiceSettings@1
-            displayName: 'Reset WEBSITE_RUN_FROM_PACKAGE = 0'
-            inputs:
-              azureSubscription: $(azureServiceConnectionId)
-              appName: 'myApplicationfinal07-AppService'
-              resourceGroupName: 'Azuredevops' 
-              appSettings: |
-                [
-                  {
-                    "name": "WEBSITE_RUN_FROM_PACKAGE",
-                    "value": "0",
-                    "slotSetting": false
-                  }
-                ]
-          #--------------------------------------------#    
-          # Run JMeter test suite against the App Service
-          - task: CmdLine@2
-            displayName: 'Install Java and run JMeter Tests'
-            inputs:
-              script: |
+    # Deploy FakeRestAPI
+    - deployment: FakeRestAPI
+      pool:
+        name: myAgentPool
+      environment: 'test-vm'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - task: AzureWebApp@1
+                displayName: 'Deploy Azure Web App'
+                inputs:
+                  azureSubscription: $(azureServiceConnectionId)
+                  appName: 'myApplicationfinal07-AppService'
+                  appType: webApp
+                  package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
 
-                # Install Java
-                sudo apt-get update
-                sudo apt-get install -y openjdk-11-jdk
+              - task: AzureAppServiceSettings@1
+                displayName: 'Reset WEBSITE_RUN_FROM_PACKAGE = 0'
+                inputs:
+                  azureSubscription: $(azureServiceConnectionId)
+                  appName: 'myApplicationfinal07-AppService'
+                  resourceGroupName: 'Azuredevops'
+                  appSettings: |
+                    [
+                      {
+                        "name": "WEBSITE_RUN_FROM_PACKAGE",
+                        "value": "0",
+                        "slotSetting": false
+                      }
+                    ]
 
-                # Set JAVA_HOME
-                export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-                export PATH=$JAVA_HOME/bin:$PATH
+              - task: CmdLine@2
+                displayName: 'Install Java and run JMeter Tests'
+                inputs:
+                  script: |
+                    sudo apt-get update
+                    sudo apt-get install -y openjdk-11-jdk
+                    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+                    export PATH=$JAVA_HOME/bin:$PATH
+                    java -version
+                    wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.1.tgz
+                    tar -xf apache-jmeter-5.2.1.tgz
+                    unzip -o $(Build.BuildId)-perftests.zip -d $(Build.BuildId)-perftests
+                    ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
+                    cat jmeter.log
+                  workingDirectory: $(Pipeline.Workspace)/drop-perftests
 
-                java -version
-
-                # Download and unzip JMeter
-                wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.1.tgz
-                tar -xf apache-jmeter-5.2.1.tgz
-
-                # Unzip test suite
-                unzip -o $(Build.BuildId)-perftests.zip -d $(Build.BuildId)-perftests
-
-                # Run JMeter test
-                ##./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
-                ./apache-jmeter-5.2.1/bin/jmeter -n -t $(Build.BuildId)-perftests/test-suite/StressTestSuite.jmx -j jmeter.log -f
-                cat jmeter.log                                        # ToDo: Write your commands
-              workingDirectory: $(Pipeline.Workspace)/drop-perftests  # ToDo: Use the artifact name from the task above
-
-  
 #--------------------------------------------#  
 # Selenium | Functional UI Tests
 # ToDo: 
-  - deployment: VMDeploy
-    displayName: Selenium Tests
-    environment:
-      name: 'test-vm'        # ToDo: Change/provide a name
-      resourceType: VirtualMachine
-      tags: test
-    strategy:
-      runOnce:
-        deploy:
-         steps:
-          - download: current
-            artifact: drop-uitests     # ToDo: Change/provide a name
+    - deployment: VMDeploy
+      displayName: Selenium Tests
+      environment:
+        name: 'test-vm'        # ToDo: Change/provide a name
+        resourceType: VirtualMachine
+        tags: test
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: current
+              artifact: drop-uitests     # ToDo: Change/provide a name
           
-          - task: Bash@3
-            inputs:
-              targetType: 'inline'
-              script: |    
+            - task: Bash@3
+              inputs:
+                targetType: 'inline'
+                script: |   
 
-                #! /bin/bash
-                sudo apt-get upgrade -y
-                sudo apt-get install python3-pip -y
+                  #! /bin/bash
+              
+                  # Mise à jour des dépôts et installation des dépendances
+                  sudo apt-get update -y
+                  sudo apt-get upgrade -y
+              
+                  # Installation de Python et pip
+                  sudo apt-get install python3 python3-pip python3-venv -y
+              
+                  # Installation d'unzip
                   sudo apt-get install unzip -y
-                sudo apt-get install -y chromium-browser
-                pip3 install selenium
-                cd ~/
-                DIR=/home/azureuser/app
-                if [ ! -d "$DIR" ]; then
-                  mkdir app
-                fi
               
-                # Debug: Vérifier la source des artifacts
-                echo "=== DEBUG: Checking artifact source ==="
-                ls -la /home/azureuser/azagent/_work/1/drop-uitests/
+                  # Installation de Chrome (plus stable que Chromium)
+                  wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+                  echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+                  sudo apt-get update -y
+                  sudo apt-get install google-chrome-stable -y
               
-                # Copier l'archive des tests
-                ARCHIVE_NAME="$(Build.BuildId)-uitests.zip"
-                if [ -f "/home/azureuser/azagent/_work/1/drop-uitests/$ARCHIVE_NAME" ]; then
-                  cp /home/azureuser/azagent/_work/1/drop-uitests/$ARCHIVE_NAME app/
-                else
-                  echo "Archive not found, looking for any zip files..."
-                  ZIP_FILE=$(find /home/azureuser/azagent/_work/1/drop-uitests/ -name "*.zip" | head -1)
-                  if [ -n "$ZIP_FILE" ]; then
-                      echo "Found zip file: $ZIP_FILE"
-                      cp "$ZIP_FILE" app/tests.zip
-                      ARCHIVE_NAME="tests.zip"
+                  # Vérifier l'installation de pip
+                  python3 -m pip --version || {
+                    echo "Installing pip manually..."
+                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                    python3 get-pip.py --user
+                    export PATH=$PATH:/home/azureuser/.local/bin
+                  }
+              
+                  # Installation de selenium
+                  python3 -m pip install selenium --user
+              
+                  cd ~/
+                  DIR=/home/azureuser/app
+                  if [ ! -d "$DIR" ]; then
+                    mkdir app
                   fi
-                fi
               
-                cd app
+                  # Debug: Vérifier la source des artifacts
+                  echo "=== DEBUG: Checking artifact source ==="
+                  ls -la /home/azureuser/azagent/_work/1/
+                  echo "=== DEBUG: Checking drop-uitests ==="
+                  ls -la /home/azureuser/azagent/_work/1/drop-uitests/ 2>/dev/null || echo "drop-uitests directory not found"
               
-                # Debug: Vérifier le contenu avant dézippage
-                echo "=== DEBUG: Files in app directory before unzip ==="
-                ls -la
+                  # Rechercher tous les fichiers zip dans l'arborescence
+                  echo "=== DEBUG: Looking for zip files ==="
+                  find /home/azureuser/azagent/_work/1/ -name "*.zip" -type f 2>/dev/null
               
-                # Dézipper l'archive
-                if [ -f "$ARCHIVE_NAME" ]; then
-                  echo "Unzipping $ARCHIVE_NAME..."
-                  unzip -o "$ARCHIVE_NAME"
+                  cd app
+              
+                  # Vérifier que l'artifact existe
+                  if [ ! -d "/home/azureuser/azagent/_work/1/drop-uitests/" ]; then
+                    echo "ERROR: drop-uitests artifact not found!"
+                    exit 1
+                  fi
+              
+                  # Chercher l'archive de tests
+                  ZIP_FILE=$(find /home/azureuser/azagent/_work/1/drop-uitests/ -name "*.zip" | head -1)
+                  if [ -z "$ZIP_FILE" ]; then
+                    echo "ERROR: No zip file found in drop-uitests!"
+                    echo "Contents of drop-uitests:"
+                    ls -la /home/azureuser/azagent/_work/1/drop-uitests/
+                    exit 1
+                  fi
+              
+                  echo "Found test archive: $ZIP_FILE"
+                  cp "$ZIP_FILE" tests.zip
+              
+                  # Debug: Vérifier le contenu avant dézippage
+                  echo "=== DEBUG: Files in app directory before unzip ==="
+                  ls -la
+              
+                  # Dézipper l'archive
+                  echo "Unzipping tests.zip..."
+                  unzip -o tests.zip
                   echo "=== DEBUG: Files after unzip ==="
                   ls -la
                   find . -name "*.py" -type f
-                fi
               
-                # Téléchargement et installation de ChromeDriver
-                FILE=/home/azureuser/app/chromedriver_linux64.zip
-                if [ ! -f "$FILE" ]; then
-                  LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-                  wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
+                  # Installation de ChromeDriver
+                  echo "=== Installing ChromeDriver ==="
+                  # Obtenir la version de Chrome installée
+                  CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+                  echo "Chrome version: $CHROME_VERSION"
+              
+                  # Télécharger ChromeDriver compatible
+                  CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)
+                  wget -N http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
                   unzip -o chromedriver_linux64.zip
-                  sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver 2>/dev/null || echo "ChromeDriver link already exists"
-                fi
-                export PATH=$PATH:/home/azureuser/app
+                  chmod +x chromedriver
+                  sudo mv chromedriver /usr/local/bin/
               
-                echo "Starting Selenium Tests"
+                  export PATH=$PATH:/home/azureuser/.local/bin
               
-                # Rechercher le fichier de test
-                TEST_FILE=$(find . -name "add_remove_from_cart.py" -type f | head -1)
-                if [ -n "$TEST_FILE" ]; then
-                  echo "Found test file at: $TEST_FILE"
-                  cd $(dirname "$TEST_FILE")
-                  echo "Current directory: $(pwd)"
-                  echo "Files in test directory:"
-                  ls -la
+                  echo "Starting Selenium Tests"
+              
+                  # Rechercher le fichier de test
+                  TEST_FILE=$(find . -name "add_remove_from_cart.py" -type f | head -1)
+                  if [ -n "$TEST_FILE" ]; then
+                    echo "Found test file at: $TEST_FILE"
+                    cd $(dirname "$TEST_FILE")
+                    echo "Current directory: $(pwd)"
+                    echo "Files in test directory:"
+                    ls -la
                   
-                  # Créer le fichier de log avec les bonnes permissions
-                  touch /home/azureuser/app/selenium.log
-                  chmod 666 /home/azureuser/app/selenium.log
+                    # Créer le fichier de log avec les bonnes permissions
+                    touch /home/azureuser/app/selenium.log
+                    chmod 666 /home/azureuser/app/selenium.log
                   
-                  # Exécuter le test
-                  python3 add_remove_from_cart.py >> /home/azureuser/app/selenium.log 2>&1
-                else
-                  echo "Error: add_remove_from_cart.py not found anywhere"
-                  echo "All Python files found:"
-                  find /home/azureuser/app -name "*.py" -type f
-                fi
+                    # Exécuter le test
+                    echo "=== EXECUTING SELENIUM TEST ===" | tee /home/azureuser/app/selenium.log
+                    python3 add_remove_from_cart.py 2>&1 | tee -a /home/azureuser/app/selenium.log
+                    echo "=== TEST EXECUTION COMPLETED ===" | tee -a /home/azureuser/app/selenium.log
+                  else
+                    echo "Error: add_remove_from_cart.py not found anywhere"
+                    echo "All Python files found:"
+                    find /home/azureuser/app -name "*.py" -type f
+                    exit 1
+                  fi
               
-                echo "Completed Selenium Tests. Check selenium.log for results."
+                  echo "Completed Selenium Tests. Check selenium.log for results."
+              
+                  # Afficher le contenu du log dans la console
+                  echo "=== SELENIUM TEST RESULTS ==="
+                  cat /home/azureuser/app/selenium.log || echo "No log file found"
+                  echo "=== END OF RESULTS ==="
+              
+                  # Copier le log vers un répertoire accessible pour la publication
+                  mkdir -p /home/azureuser/TestResults
+                  cp /home/azureuser/app/selenium.log /home/azureuser/TestResults/ 2>/dev/null || echo "No log file to copy"
+              
+            # Publier les résultats des tests comme artifact
+            - task: PublishBuildArtifacts@1
+              inputs:
+                pathtoPublish: '/home/azureuser/TestResults'
+                artifactName: 'selenium-test-results'
+              displayName: 'Publish Selenium Test Results'
+              condition: always() # Publier même si les tests échouent
