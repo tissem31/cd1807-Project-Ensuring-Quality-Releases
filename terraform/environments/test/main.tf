@@ -6,6 +6,15 @@ provider "azurerm" {
   features {}
 }
 
+# terraform {
+#   backend "azurerm" {
+#     storage_account_name = "tfstate2797731198"
+#     container_name       = "tfstate"
+#     key                  = "projectEnsuringQualityReleases.tfstate"
+#     access_key           = "C2HtFMMewOzFhNgaisF7Fo6BTBt/YgqNkj7iyIkSt5zM2rnaYqgNvf+fHEDtIqgyZavsRJbCOJjn+AStOVfC2g=="
+#   }
+# }
+
 module "resource_group" {
   source         = "../../modules/resource_group"
   resource_group = var.resource_group_name
@@ -50,7 +59,7 @@ module "publicip" {
 # log analytics workspace
 #================================
 data "azurerm_log_analytics_workspace" "law" {
-  name                = "loganalytics-281331"
+  name                = "loganalytics-281416"
   resource_group_name = module.resource_group.resource_group_name
 }
 # ================================
