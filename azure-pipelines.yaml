@@ -295,21 +295,32 @@ stages:
                   ls -la
                   find . -name "*.py" -type f
               
-                  # Installation de ChromeDriver
-                  echo "=== Installing ChromeDriver ==="
-                  # Obtenir la version de Chrome installée
-                  CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+                  # Obtenir la version complète de Chrome installée
+                  CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }')
+                  CHROMEDRIVER_MAJOR=$(echo "$CHROME_VERSION" | cut -d '.' -f1)
+
                   echo "Chrome version: $CHROME_VERSION"
+                  echo "Detected Chrome major version: $CHROMEDRIVER_MAJOR"
               
-                  # Télécharger ChromeDriver compatible
-                  CHROMEDRIVER_VERSION="124.0.6367.91"
-                  wget https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
+                  # Télécharger la version correspondante de ChromeDriver
+                  LATEST_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROMEDRIVER_MAJOR}"
+                  CHROMEDRIVER_VERSION=$(curl -s "$LATEST_URL")
+
+                  if [ -z "$CHROMEDRIVER_VERSION" ]; then
+                    echo "❌ Unable to find matching ChromeDriver version for Chrome $CHROME_VERSION"
+                    exit 1
+                  fi
+
+                  echo "Downloading ChromeDriver version: $CHROMEDRIVER_VERSION"
+                  wget "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
                   unzip -o chromedriver_linux64.zip
                   chmod +x chromedriver
                   sudo mv chromedriver /usr/local/bin/
-              
+
                   export PATH=$PATH:/home/azureuser/.local/bin
-              
+
+                  echo "✅ ChromeDriver $CHROMEDRIVER_VERSION installed successfully"
+                  
                   echo "Starting Selenium Tests"
               
                   # Rechercher le fichier de test
