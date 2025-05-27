@@ -275,43 +275,79 @@ stages:
                 #! /bin/bash
                 sudo apt-get upgrade -y
                 sudo apt-get install python3-pip -y
-                sudo apt-get install unzip -y
+                  sudo apt-get install unzip -y
                 sudo apt-get install -y chromium-browser
                 pip3 install selenium
                 cd ~/
-                DIR=/home/testuser/app
+                DIR=/home/azureuser/app
                 if [ ! -d "$DIR" ]; then
                   mkdir app
                 fi
-                mv /home/testuser/azagent/_work/1/drop-uitests/$(Build.BuildId)-uitests.zip app
+              
+                # Debug: Vérifier la source des artifacts
+                echo "=== DEBUG: Checking artifact source ==="
+                ls -la /home/azureuser/azagent/_work/1/drop-uitests/
+              
+                # Copier l'archive des tests
+                ARCHIVE_NAME="$(Build.BuildId)-uitests.zip"
+                if [ -f "/home/azureuser/azagent/_work/1/drop-uitests/$ARCHIVE_NAME" ]; then
+                  cp /home/azureuser/azagent/_work/1/drop-uitests/$ARCHIVE_NAME app/
+                else
+                  echo "Archive not found, looking for any zip files..."
+                  ZIP_FILE=$(find /home/azureuser/azagent/_work/1/drop-uitests/ -name "*.zip" | head -1)
+                  if [ -n "$ZIP_FILE" ]; then
+                      echo "Found zip file: $ZIP_FILE"
+                      cp "$ZIP_FILE" app/tests.zip
+                      ARCHIVE_NAME="tests.zip"
+                  fi
+                fi
+              
                 cd app
-                unzip -o $(Build.BuildId)-uitests.zip -d $(Build.BuildId)-uitests
+              
+                # Debug: Vérifier le contenu avant dézippage
+                echo "=== DEBUG: Files in app directory before unzip ==="
+                ls -la
+              
+                # Dézipper l'archive
+                if [ -f "$ARCHIVE_NAME" ]; then
+                  echo "Unzipping $ARCHIVE_NAME..."
+                  unzip -o "$ARCHIVE_NAME"
+                  echo "=== DEBUG: Files after unzip ==="
+                  ls -la
+                  find . -name "*.py" -type f
+                fi
               
                 # Téléchargement et installation de ChromeDriver
-                FILE=/home/testuser/app/chromedriver_linux64.zip
+                FILE=/home/azureuser/app/chromedriver_linux64.zip
                 if [ ! -f "$FILE" ]; then
                   LATEST=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
                   wget http://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
                   unzip -o chromedriver_linux64.zip
-                  sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver
+                  sudo ln -s $PWD/chromedriver /usr/local/bin/chromedriver 2>/dev/null || echo "ChromeDriver link already exists"
                 fi
-                export PATH=$PATH:/home/testuser/app
-              
-                # Navigation vers le répertoire contenant les tests
-                cd $(Build.BuildId)-uitests/uitest
+                export PATH=$PATH:/home/azureuser/app
               
                 echo "Starting Selenium Tests"
-                echo "Current directory: $(pwd)"
-                echo "Files in directory:"
-                ls -la
               
-                # Exécution des tests Python
-                if [ -f "add_remove_from_cart.py" ]; then
-                  python3 add_remove_from_cart.py >> ../../selenium.log
+                # Rechercher le fichier de test
+                TEST_FILE=$(find . -name "add_remove_from_cart.py" -type f | head -1)
+                if [ -n "$TEST_FILE" ]; then
+                  echo "Found test file at: $TEST_FILE"
+                  cd $(dirname "$TEST_FILE")
+                  echo "Current directory: $(pwd)"
+                  echo "Files in test directory:"
+                  ls -la
+                  
+                  # Créer le fichier de log avec les bonnes permissions
+                  touch /home/azureuser/app/selenium.log
+                  chmod 666 /home/azureuser/app/selenium.log
+                  
+                  # Exécuter le test
+                  python3 add_remove_from_cart.py >> /home/azureuser/app/selenium.log 2>&1
                 else
-                  echo "Error: add_remove_from_cart.py not found in $(pwd)" >> ../../selenium.log
-                  echo "Available files:" >> ../../selenium.log
-                  ls -la >> ../../selenium.log
+                  echo "Error: add_remove_from_cart.py not found anywhere"
+                  echo "All Python files found:"
+                  find /home/azureuser/app -name "*.py" -type f
                 fi
               
                 echo "Completed Selenium Tests. Check selenium.log for results."
